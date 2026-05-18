@@ -365,7 +365,7 @@ test("app source wires a Parquet Files section to an embedded non-iframe viewer"
   assert.match(appSource, /fetchParquetFileLineage/);
   assert.match(appSource, /id="parquet-files-section"/);
   assert.match(browserSource, /defineEmits<\{[\s\S]*select: \[file: ParquetFileRecord\];[\s\S]*\}>/);
-  assert.match(viewerSource, /PARQUET_VIEWER_SCRIPT/);
+  assert.match(viewerSource, /PARQUET_VIEWER_MANIFEST/);
   assert.match(viewerSource, /restoreHostPageLocation/);
   assert.match(viewerSource, /downloadParquetFileForViewer/);
   assert.match(viewerSource, /submitFileToViewer/);
@@ -379,6 +379,39 @@ test("app source wires a Parquet Files section to an embedded non-iframe viewer"
   assert.match(standaloneLoaderSource, /DataTransfer/);
   assert.match(standaloneLoaderSource, /dispatchEvent\(new Event\("change"/);
   assert.doesNotMatch(viewerSource, /<iframe/i);
+});
+
+test("Parquet viewer runtime is built from vendored Dioxus source", () => {
+  const repoRoot = path.resolve(siteRoot, "..");
+  const viewerCargoSource = readFileSync(path.join(repoRoot, "parquet-viewer", "Cargo.toml"), "utf8");
+  const buildScriptSource = readFileSync(path.join(repoRoot, "scripts", "build_parquet_viewer.sh"), "utf8");
+  const viewerSource = readFileSync(path.join(siteRoot, "src", "components", "EmbeddedParquetViewer.vue"), "utf8");
+  const standaloneSource = readFileSync(path.join(siteRoot, "public", "parquet-viewer.html"), "utf8");
+  const runtimeLoaderSource = readFileSync(path.join(siteRoot, "public", "parquet-viewer-runtime-loader.js"), "utf8");
+  const manifestSource = readFileSync(path.join(siteRoot, "public", "parquet-viewer-runtime", "manifest.json"), "utf8");
+  const manifest = JSON.parse(manifestSource);
+  const runtimeScriptSource = readFileSync(path.join(siteRoot, "public", "parquet-viewer-runtime", manifest.script), "utf8");
+  const runtimeIndexSource = readFileSync(path.join(siteRoot, "public", "parquet-viewer-runtime", "index.html"), "utf8");
+  const noticeSource = readFileSync(path.join(siteRoot, "public", "parquet-viewer-runtime", "NOTICE.md"), "utf8");
+
+  assert.match(viewerCargoSource, /name = "parquet-viewer"/);
+  assert.match(viewerCargoSource, /dioxus = \{/);
+  assert.match(buildScriptSource, /build --platform web --release/);
+  assert.match(buildScriptSource, /parquet-viewer-runtime/);
+  assert.match(buildScriptSource, /manifest\.json/);
+  assert.match(buildScriptSource, /import\.meta\.url/);
+  assert.match(viewerSource, /PARQUET_VIEWER_MANIFEST/);
+  assert.match(viewerSource, /const PARQUET_VIEWER_MANIFEST = "\.\/parquet-viewer-runtime\/manifest\.json"/);
+  assert.match(viewerSource, /loadParquetViewerManifest/);
+  assert.doesNotMatch(viewerSource, /parquet-viewer-dxh/);
+  assert.match(standaloneSource, /parquet-viewer-runtime-loader\.js/);
+  assert.match(runtimeLoaderSource, /parquet-viewer-runtime\/manifest\.json/);
+  assert.match(manifestSource, /"source": "parquet-viewer"/);
+  assert.match(manifestSource, /"script": "\.\/assets\/parquet-viewer-/);
+  assert.match(runtimeScriptSource, /module_or_path:new URL\("\.\/parquet-viewer_bg-/);
+  assert.doesNotMatch(runtimeScriptSource, /module_or_path:"\/\.\/assets\//);
+  assert.doesNotMatch(runtimeIndexSource, /"\/\.\/assets\//);
+  assert.match(noticeSource, /vendored from XiangpengHao\/parquet-viewer/);
 });
 
 test("Parquet files render as a left-to-right graph and open a persistent modal inspector", () => {

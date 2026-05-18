@@ -41,6 +41,7 @@ const {
   compareFeatureWithPrevious,
   fetchIndex,
   formatRateDelta,
+  runDetailSummariesForComparison,
   summarizeFeatureComparisons,
 } = require(path.join(outDir, "report.js"));
 
@@ -222,6 +223,29 @@ test("summarizes feature-level movement against the immediately older suite", ()
     flat: 1,
     comparable: 3,
   });
+});
+
+test("selects only the requested run and its immediately previous run for full-detail comparison", () => {
+  const runs = [
+    { id: "run-3", run_id: "run-3", started_at: "2026-05-03T00:00:00Z" },
+    { id: "run-2", run_id: "run-2", started_at: "2026-05-02T00:00:00Z" },
+    { id: "run-1", run_id: "run-1", started_at: "2026-05-01T00:00:00Z" },
+  ];
+
+  assert.deepEqual(
+    runDetailSummariesForComparison(runs, 0).map((run) => run.id),
+    ["run-3", "run-2"],
+  );
+  assert.deepEqual(
+    runDetailSummariesForComparison(runs, 1).map((run) => run.id),
+    ["run-2", "run-1"],
+  );
+  assert.deepEqual(
+    runDetailSummariesForComparison(runs, 2).map((run) => run.id),
+    ["run-1"],
+  );
+  assert.deepEqual(runDetailSummariesForComparison(runs, -1), []);
+  assert.deepEqual(runDetailSummariesForComparison(runs, 3), []);
 });
 
 test("loads partitioned index shards and reconstructs the existing index shape", async () => {

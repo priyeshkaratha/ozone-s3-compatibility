@@ -11,11 +11,20 @@ const props = defineProps<{
 declare global {
   interface Window {
     __dx_mainWasm?: unknown;
+    __ozoneParquetViewerManifestPromise?: Promise<ParquetViewerRuntimeManifest>;
     __ozoneParquetViewerScriptPromise?: Promise<void>;
   }
 }
 
-const PARQUET_VIEWER_SCRIPT = "/assets/parquet-viewer-dxh4a536bbbd247c221.js";
+interface ParquetViewerRuntimeManifest {
+  source?: string;
+  version?: string;
+  script: string;
+  styles?: string[];
+  icon?: string;
+}
+
+const PARQUET_VIEWER_MANIFEST = "./parquet-viewer-runtime/manifest.json";
 const VIEWER_READY_TIMEOUT_MS = 20_000;
 const FORM_READY_TIMEOUT_MS = 8_000;
 
@@ -36,16 +45,73 @@ function errorMessageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function appendViewerScript(): Promise<void> {
+function runtimeManifestUrl(): URL {
+  return new URL(PARQUET_VIEWER_MANIFEST, window.location.href);
+}
+
+function resolveRuntimeUrl(value: string): string {
+  return new URL(value, runtimeManifestUrl()).toString();
+}
+
+function loadParquetViewerManifest(): Promise<ParquetViewerRuntimeManifest> {
+  if (window.__ozoneParquetViewerManifestPromise) {
+    return window.__ozoneParquetViewerManifestPromise;
+  }
+
+  window.__ozoneParquetViewerManifestPromise = fetch(runtimeManifestUrl().toString(), { cache: "no-cache" }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(`Parquet viewer manifest failed to load: HTTP ${response.status}`);
+    }
+    const manifest = (await response.json()) as Partial<ParquetViewerRuntimeManifest>;
+    if (!manifest.script) {
+      throw new Error("Parquet viewer manifest does not define a runtime script.");
+    }
+    return {
+      source: manifest.source,
+      version: manifest.version,
+      script: manifest.script,
+      styles: manifest.styles || [],
+      icon: manifest.icon,
+    };
+  });
+
+  return window.__ozoneParquetViewerManifestPromise;
+}
+
+function appendRuntimeStyles(styles: string[]): void {
+  styles.forEach((stylePath) => {
+    const href = resolveRuntimeUrl(stylePath);
+    const exists = Array.from(document.querySelectorAll<HTMLLinkElement>('link[data-parquet-viewer-runtime-style="true"]')).some(
+      (link) => link.href === href,
+    );
+    if (exists) {
+      return;
+    }
+
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.parquetViewerRuntimeStyle = "true";
+    document.head.appendChild(link);
+  });
+}
+
+async function appendViewerScript(): Promise<void> {
+  const manifest = await loadParquetViewerManifest();
+  appendRuntimeStyles(manifest.styles || []);
+
   if (window.__dx_mainWasm) {
-    return Promise.resolve();
+    return;
   }
   if (window.__ozoneParquetViewerScriptPromise) {
     return window.__ozoneParquetViewerScriptPromise;
   }
 
+  const scriptSrc = resolveRuntimeUrl(manifest.script);
   window.__ozoneParquetViewerScriptPromise = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(`script[data-parquet-viewer-runtime="true"]`);
+    const existing = Array.from(document.querySelectorAll<HTMLScriptElement>('script[data-parquet-viewer-runtime="true"]')).find(
+      (script) => script.src === scriptSrc,
+    );
     if (existing) {
       existing.addEventListener("load", () => resolve(), { once: true });
       existing.addEventListener("error", () => reject(new Error("Parquet viewer runtime failed to load.")), { once: true });
@@ -55,7 +121,7 @@ function appendViewerScript(): Promise<void> {
     const script = document.createElement("script");
     script.type = "module";
     script.async = true;
-    script.src = PARQUET_VIEWER_SCRIPT;
+    script.src = scriptSrc;
     script.dataset.parquetViewerRuntime = "true";
     script.addEventListener("load", () => resolve(), { once: true });
     script.addEventListener("error", () => reject(new Error("Parquet viewer runtime failed to load.")), { once: true });

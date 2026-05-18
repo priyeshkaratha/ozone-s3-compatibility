@@ -22,6 +22,17 @@ test("defers search and history detail Parquet files until user demand", () => {
   assert.match(appSource, /if \(open\) \{[\s\S]*ensureHistoryRunLoaded\(summary\)/);
 });
 
+test("loads the immediately previous full run detail when requested detail opens", () => {
+  assert.match(appSource, /runDetailSummariesForComparison/);
+  assert.match(appSource, /function runOrdinalForSummary\(summary: RunSummary\): number/);
+  assert.match(appSource, /async function ensureRunSummaryDetailLoaded\(summary: RunSummary\): Promise<void>/);
+  assert.match(appSource, /async function ensureRunDetailLoadedWithComparison\(runOrdinal: number\): Promise<void>/);
+  assert.match(appSource, /runDetailSummariesForComparison\(index\.value\?\.runs \|\| \[\], runOrdinal\)/);
+  assert.match(appSource, /Promise\.all\(summaries\.map\(\(summary\) => ensureRunSummaryDetailLoaded\(summary\)\)\)/);
+  assert.match(appSource, /async function loadLatestRun\(\): Promise<void> \{[\s\S]*await ensureRunDetailLoadedWithComparison\(0\);[\s\S]*\}/);
+  assert.match(appSource, /async function ensureHistoryRunLoaded\(summary: RunSummary\): Promise<void> \{[\s\S]*const runOrdinal = runOrdinalForSummary\(summary\);[\s\S]*await ensureRunDetailLoadedWithComparison\(runOrdinal\);[\s\S]*\}/);
+});
+
 test("shows search index load progress before a query is entered", () => {
   assert.match(appSource, /const searchIndexProgress = ref<SearchIndexLoadProgress \| null>\(null\)/);
   assert.match(appSource, /const searchIndexProgressText = computed<string>\(\(\) => \{/);

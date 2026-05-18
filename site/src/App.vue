@@ -29,6 +29,7 @@ import {
   formatDate,
   formatPercent,
   orderedSuitesFromRun,
+  runDetailSummariesForComparison,
   runScope,
   scrollElementIntoView,
   statusClass,
@@ -422,20 +423,37 @@ async function bootstrap(): Promise<void> {
 
 async function loadLatestRun(): Promise<void> {
   if (!latestSummary.value) return;
-  if (latestRun.value || latestRunLoading.value) return;
-
-  latestRunLoading.value = true;
-  latestRunError.value = "";
-  try {
-    latestRun.value = await fetchReportRun(latestSummary.value, await reportDataOptions());
-  } catch (error) {
-    latestRunError.value = errorMessageOf(error);
-  } finally {
-    latestRunLoading.value = false;
-  }
+  await ensureRunDetailLoadedWithComparison(0);
 }
 
-async function ensureHistoryRunLoaded(summary: RunSummary): Promise<void> {
+function isLatestSummary(summary: RunSummary): boolean {
+  const latest = latestSummary.value;
+  return Boolean(latest && (summary.id === latest.id || (summary.run_id && summary.run_id === latest.run_id)));
+}
+
+function runOrdinalForSummary(summary: RunSummary): number {
+  return (
+    index.value?.runs.findIndex((item) => item.id === summary.id || Boolean(summary.run_id && item.run_id === summary.run_id)) ??
+    -1
+  );
+}
+
+async function ensureRunSummaryDetailLoaded(summary: RunSummary): Promise<void> {
+  if (isLatestSummary(summary)) {
+    if (latestRun.value || latestRunLoading.value) return;
+
+    latestRunLoading.value = true;
+    latestRunError.value = "";
+    try {
+      latestRun.value = await fetchReportRun(summary, await reportDataOptions());
+    } catch (error) {
+      latestRunError.value = errorMessageOf(error);
+    } finally {
+      latestRunLoading.value = false;
+    }
+    return;
+  }
+
   if (!summary || runDetailsById[summary.id] || runLoading[summary.id]) {
     return;
   }
@@ -450,6 +468,21 @@ async function ensureHistoryRunLoaded(summary: RunSummary): Promise<void> {
   } finally {
     runLoading[summary.id] = false;
   }
+}
+
+async function ensureRunDetailLoadedWithComparison(runOrdinal: number): Promise<void> {
+  const summaries = runDetailSummariesForComparison(index.value?.runs || [], runOrdinal);
+  await Promise.all(summaries.map((summary) => ensureRunSummaryDetailLoaded(summary)));
+}
+
+async function ensureHistoryRunLoaded(summary: RunSummary): Promise<void> {
+  const runOrdinal = runOrdinalForSummary(summary);
+  if (runOrdinal < 0) {
+    await ensureRunSummaryDetailLoaded(summary);
+    return;
+  }
+
+  await ensureRunDetailLoadedWithComparison(runOrdinal);
 }
 
 async function reportDataOptions(): Promise<ReportDataFetchOptions> {

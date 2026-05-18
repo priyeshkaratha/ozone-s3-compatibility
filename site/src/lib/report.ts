@@ -333,6 +333,20 @@ export function deltaForSuite(runs: RunSummary[], suiteKey: string): number | nu
   return null;
 }
 
+export function runDetailSummariesForComparison(runs: RunSummary[], runOrdinal: number): RunSummary[] {
+  if (runOrdinal < 0) {
+    return [];
+  }
+
+  const current = runs[runOrdinal];
+  if (!current) {
+    return [];
+  }
+
+  const previous = runs[runOrdinal + 1];
+  return previous ? [current, previous] : [current];
+}
+
 export function topFeatureNames(index: IndexPayload, suiteKey: string): string[] {
   const latest = index?.runs?.[0]?.suites?.[suiteKey]?.feature_summaries || [];
   return latest

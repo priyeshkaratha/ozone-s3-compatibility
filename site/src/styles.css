@@ -1751,6 +1751,10 @@ th {
   background: transparent;
 }
 
+.parquet-inspector-modal .embedded-parquet-viewer-head {
+  padding-right: 3.25rem;
+}
+
 .parquet-inspector-modal .embedded-parquet-viewer-shell,
 .parquet-inspector-modal .embedded-parquet-viewer-root,
 .parquet-inspector-modal .embedded-parquet-viewer-root > div {

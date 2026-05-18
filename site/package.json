@@ -4,8 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "build:parquet-viewer": "bash ../scripts/build_parquet_viewer.sh",
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "build:all": "npm run build:parquet-viewer && npm run build",
     "test": "node --test tests/*.test.mjs",
     "typecheck": "vue-tsc --noEmit",
     "preview": "vite preview"
