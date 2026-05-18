@@ -102,6 +102,24 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
 
+      - name: Cache Parquet viewer Rust build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/dx
+            ~/.cargo/registry
+            ~/.cargo/git
+            parquet-viewer/target
+          key: ${{ runner.os }}-parquet-viewer-dx-0.7.3-${{ hashFiles('parquet-viewer/Cargo.lock', 'parquet-viewer/Cargo.toml') }}
+
+      - name: Set up Parquet viewer WASM toolchain
+        run: |
+          set -euo pipefail
+          rustup target add wasm32-unknown-unknown
+          if ! command -v dx >/dev/null 2>&1 || ! dx --version | grep -q '0\.7\.3'; then
+            cargo install dioxus-cli --version 0.7.3 --locked
+          fi
+
       - name: Install workflow dependencies
         run: |
           missing=()
@@ -120,7 +138,7 @@ jobs:
         run: |
           set -euo pipefail
           npm --prefix site ci
-          VITE_REPORT_DATA_FORMAT=parquet npm --prefix site run build
+          VITE_REPORT_DATA_FORMAT=parquet npm --prefix site run build:all
 
       - name: Initialize nightly run context
         id: init
