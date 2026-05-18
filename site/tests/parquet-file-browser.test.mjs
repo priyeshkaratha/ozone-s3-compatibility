@@ -441,6 +441,14 @@ test("Parquet files render as a left-to-right graph and open a persistent modal 
   assert.match(stylesSource, /\.parquet-graph-node[\s\S]*display:\s*flex/);
   assert.match(stylesSource, /\.parquet-graph-children[\s\S]*flex-direction:\s*column/);
   assert.match(stylesSource, /\.parquet-graph-node::before[\s\S]*border-top/);
+  assert.match(stylesSource, /\.embedded-parquet-viewer-root\s*\{[\s\S]*width:\s*100%/);
+  assert.match(stylesSource, /\.embedded-parquet-viewer-root\s*\{[\s\S]*min-width:\s*0/);
+  assert.doesNotMatch(stylesSource, /\.embedded-parquet-viewer-root\s*\{[\s\S]*min-width:\s*68rem/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.main-content > div/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.panel-soft > \.flex > div:first-child/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.panel-soft > \.flex > \.flex > div:first-child/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.panel-soft > \.flex\s*\{[\s\S]*flex-direction:\s*column/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.panel-soft > \.flex > \.flex\s*\{[\s\S]*flex-direction:\s*column/);
   assert.match(browserSource, /graph: ParquetFileTreeNode\[\]/);
   assert.doesNotMatch(browserSource, /parquet-graph-card root/);
   assert.match(graphNodeSource, /class="parquet-graph-card"/);

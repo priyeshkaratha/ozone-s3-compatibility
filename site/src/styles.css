@@ -730,11 +730,14 @@ code,
 
 .embedded-parquet-viewer-root {
   min-height: min(46rem, 78vh);
-  min-width: 68rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .embedded-parquet-viewer-root > div {
   min-height: min(46rem, 78vh);
+  width: 100%;
+  min-width: 0;
 }
 
 .embedded-viewer-status {
@@ -1759,6 +1762,98 @@ th {
 .parquet-inspector-modal .embedded-parquet-viewer-root,
 .parquet-inspector-modal .embedded-parquet-viewer-root > div {
   min-height: min(48rem, calc(100vh - 10rem));
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root .main-content,
+.parquet-inspector-modal .embedded-parquet-viewer-root .main-content > div,
+.parquet-inspector-modal .embedded-parquet-viewer-root .panel-soft,
+.parquet-inspector-modal .embedded-parquet-viewer-root .flex,
+.parquet-inspector-modal .embedded-parquet-viewer-root .flex-1 {
+  min-width: 0;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root .tabs {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root .tab {
+  min-width: max-content;
+  white-space: nowrap;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root .panel-soft > .flex > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root .panel-soft > .flex > div:last-child {
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root .panel-soft > .flex > .flex {
+  min-width: 0;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root .panel-soft > .flex > .flex > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root .panel-soft > .flex > .flex > div:last-child {
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root pre {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root table {
+  width: max-content;
+  min-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .parquet-inspector-modal .embedded-parquet-viewer-root .main-content > div {
+    padding: 1rem;
+  }
+
+  .parquet-inspector-modal .embedded-parquet-viewer-root .tab {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-right: 0.45rem;
+    padding-left: 0.45rem;
+    font-size: 0.82rem;
+  }
+
+  .parquet-inspector-modal .embedded-parquet-viewer-root .sidebar {
+    width: 2.75rem;
+  }
+
+  .parquet-inspector-modal .embedded-parquet-viewer-root .sidebar-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .parquet-inspector-modal .embedded-parquet-viewer-root .panel-soft > .flex {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .parquet-inspector-modal .embedded-parquet-viewer-root .panel-soft > .flex > .flex {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .log-detail-text {
