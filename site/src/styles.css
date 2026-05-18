@@ -1744,11 +1744,19 @@ th {
 }
 
 .parquet-inspector-modal {
+  display: flex;
+  flex-direction: column;
   width: min(1320px, 100%);
-  min-height: min(58rem, calc(100vh - 2rem));
+  height: min(58rem, calc(100vh - 2rem));
+  height: min(58rem, calc(100dvh - 2rem));
+  overflow: hidden;
 }
 
 .parquet-inspector-modal .embedded-parquet-viewer {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -1762,6 +1770,18 @@ th {
 .parquet-inspector-modal .embedded-parquet-viewer-root,
 .parquet-inspector-modal .embedded-parquet-viewer-root > div {
   min-height: min(48rem, calc(100vh - 10rem));
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root,
+.parquet-inspector-modal .embedded-parquet-viewer-root > div {
+  min-height: 100%;
 }
 
 .parquet-inspector-modal .embedded-parquet-viewer-root .main-content,
@@ -1826,6 +1846,11 @@ th {
 @media (max-width: 640px) {
   .parquet-inspector-modal .embedded-parquet-viewer-root .main-content > div {
     padding: 1rem;
+  }
+
+  .parquet-inspector-modal {
+    height: calc(100vh - 1rem);
+    height: calc(100dvh - 1rem);
   }
 
   .parquet-inspector-modal .embedded-parquet-viewer-root .tab {

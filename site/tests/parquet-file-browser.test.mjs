@@ -444,6 +444,13 @@ test("Parquet files render as a left-to-right graph and open a persistent modal 
   assert.match(stylesSource, /\.embedded-parquet-viewer-root\s*\{[\s\S]*width:\s*100%/);
   assert.match(stylesSource, /\.embedded-parquet-viewer-root\s*\{[\s\S]*min-width:\s*0/);
   assert.doesNotMatch(stylesSource, /\.embedded-parquet-viewer-root\s*\{[\s\S]*min-width:\s*68rem/);
+  assert.match(stylesSource, /\.parquet-inspector-modal\s*\{[\s\S]*display:\s*flex/);
+  assert.match(stylesSource, /\.parquet-inspector-modal\s*\{[\s\S]*height:\s*min\(58rem,\s*calc\(100dvh - 2rem\)\)/);
+  assert.match(stylesSource, /\.parquet-inspector-modal\s*\{[\s\S]*overflow:\s*hidden/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer\s*\{[\s\S]*min-height:\s*0/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-shell\s*\{[\s\S]*flex:\s*1 1 auto/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-shell\s*\{[\s\S]*min-height:\s*0/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-shell\s*\{[\s\S]*overscroll-behavior:\s*contain/);
   assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.main-content > div/);
   assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.panel-soft > \.flex > div:first-child/);
   assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.panel-soft > \.flex > \.flex > div:first-child/);
