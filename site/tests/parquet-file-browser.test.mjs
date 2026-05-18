@@ -451,6 +451,12 @@ test("Parquet files render as a left-to-right graph and open a persistent modal 
   assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-shell\s*\{[\s\S]*flex:\s*1 1 auto/);
   assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-shell\s*\{[\s\S]*min-height:\s*0/);
   assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-shell\s*\{[\s\S]*overscroll-behavior:\s*contain/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root\s*\{[\s\S]*height:\s*100%/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root > div:not\(\.toast-container\)\s*\{[\s\S]*height:\s*100%/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.h-screen\s*\{[\s\S]*height:\s*100%/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.main-content\s*\{[\s\S]*min-height:\s*0/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root > \.toast-container\s*\{[\s\S]*min-height:\s*0/);
+  assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root > \.toast-container\s*\{[\s\S]*pointer-events:\s*none/);
   assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.main-content > div/);
   assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.panel-soft > \.flex > div:first-child/);
   assert.match(stylesSource, /\.parquet-inspector-modal \.embedded-parquet-viewer-root \.panel-soft > \.flex > \.flex > div:first-child/);

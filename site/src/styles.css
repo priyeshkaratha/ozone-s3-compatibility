@@ -1767,9 +1767,8 @@ th {
 }
 
 .parquet-inspector-modal .embedded-parquet-viewer-shell,
-.parquet-inspector-modal .embedded-parquet-viewer-root,
-.parquet-inspector-modal .embedded-parquet-viewer-root > div {
-  min-height: min(48rem, calc(100vh - 10rem));
+.parquet-inspector-modal .embedded-parquet-viewer-root {
+  min-height: 0;
 }
 
 .parquet-inspector-modal .embedded-parquet-viewer-shell {
@@ -1779,8 +1778,13 @@ th {
   -webkit-overflow-scrolling: touch;
 }
 
-.parquet-inspector-modal .embedded-parquet-viewer-root,
-.parquet-inspector-modal .embedded-parquet-viewer-root > div {
+.parquet-inspector-modal .embedded-parquet-viewer-root {
+  height: 100%;
+  overflow: hidden;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root > div:not(.toast-container) {
+  height: 100%;
   min-height: 100%;
 }
 
@@ -1790,6 +1794,24 @@ th {
 .parquet-inspector-modal .embedded-parquet-viewer-root .flex,
 .parquet-inspector-modal .embedded-parquet-viewer-root .flex-1 {
   min-width: 0;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root .h-screen {
+  height: 100%;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root .main-content {
+  min-height: 0;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root > .toast-container {
+  height: auto;
+  min-height: 0;
+  pointer-events: none;
+}
+
+.parquet-inspector-modal .embedded-parquet-viewer-root > .toast-container .toast {
+  pointer-events: auto;
 }
 
 .parquet-inspector-modal .embedded-parquet-viewer-root .tabs {
