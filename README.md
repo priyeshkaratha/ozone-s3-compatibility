@@ -2,7 +2,9 @@
 
 Runs Apache Ozone against `ceph/s3-tests` and `minio/mint`, normalizes the results, and publishes a GitHub Pages compatibility report.
 
-The report includes suite trends, feature summaries, archived run details, and shareable test-case search.
+Published report: <https://ozone.s3.peterxcli.dev/>
+
+The report includes suite trends, feature summaries, archived run details, shareable test-case search, on-demand source snippets, log views, and an embedded Parquet file inspector for the published data set.
 
 https://github.com/user-attachments/assets/bf2decf9-bb98-48da-bcbf-e2a2951806f9
 
@@ -10,47 +12,59 @@ https://github.com/user-attachments/assets/bf2decf9-bb98-48da-bcbf-e2a2951806f9
 
 - `.github/workflows/nightly.yml`
   - Scheduled daily at `02:15 UTC`.
-  - Builds Ozone, starts the packaged compose cluster, runs `s3-tests` and Mint, writes `out/run/run.json`, rebuilds Pages, and publishes to `gh-pages` on scheduled runs.
-  - Manual runs can publish by setting `publish_pages: true`.
+  - Builds the Pages frontend, builds Ozone, starts the packaged compose cluster, runs `s3-tests` and Mint, writes `out/run/run.json`, rebuilds Pages with Parquet report data, and uploads the run artifacts.
+  - Scheduled runs publish to `gh-pages`; manual runs publish only when `publish_pages: true`.
 
 - `.github/workflows/refresh-pages-ui.yml`
   - Runs on every push to `main` and by manual dispatch.
-  - Rebuilds the Vue frontend and refreshes published UI assets on `gh-pages` while preserving existing run history.
+  - Rebuilds the Vue frontend and vendored Parquet viewer runtime, then refreshes published UI assets on `gh-pages` while preserving existing run history.
 
 - `.github/workflows/ozone-pr-s3-compatibility.yml`
   - Runs from `repository_dispatch` or manual input for an Ozone PR.
-  - Compares the PR run with the latest published main run and uploads artifacts. It does not publish PR data to Pages.
+  - Tests the PR head, compares the result with the latest published main run, writes a step summary, optionally comments back on the Ozone PR, and uploads artifacts. It does not publish PR data to Pages.
 
 ## Layout
 
 - `scripts/run-nightly.sh`: local orchestration entrypoint.
 - `scripts/nightly/`: clone, build, cluster, test, and normalization steps.
 - `scripts/normalize_run.py`: converts raw `s3-tests` and Mint output into run JSON.
-- `scripts/build_pages.py`: builds Parquet report data, social preview assets, and static Pages output.
+- `scripts/parquet_run.py`: writes and reads the Parquet run data set used by the report.
+- `scripts/build_pages.py`: builds the report catalog, per-run Parquet files, social preview assets, and static Pages output.
+- `scripts/build_parquet_viewer.sh`: rebuilds the vendored Parquet viewer runtime under `site/public/`.
 - `scripts/compare_runs.py`: writes PR-vs-main comparison markdown.
+- `scripts/generate_s3_tests_failure_audit.py`: generates the grouped `s3-tests` failure audit in `docs/s3-tests-failure-audit/`.
 - `site/`: Vue 3 + Vite report frontend.
+- `site/tests/`: Node test coverage for report UI and frontend data helpers.
+- `tests/`: Python test coverage for Pages output, Parquet data, custom-domain publishing, and PR comparison comments.
+- `parquet-viewer/`: vendored Dioxus/WASM Parquet viewer source used by the embedded inspector.
+- `docs/`: PR comment bot setup, HDDS-12716 compatibility mapping, and generated failure-audit documentation.
 - `.github/act/`: local `act` runner image and sample event.
 - `out/`, `run/`, `.work/`: generated local state.
 
 ## Local Development
 
-Install frontend dependencies:
+Initialize submodules and install dependencies:
 
 ```bash
+git submodule update --init --recursive
+uv sync --locked
 npm --prefix site ci
 ```
 
-Install Python report data dependencies:
+Run the focused checks:
 
 ```bash
-uv sync
+PYTHONPATH=. uv run --with pytest pytest tests
+npm --prefix site test
+npm --prefix site run typecheck
+npm --prefix site run build
 ```
 
-Run frontend checks:
+Rebuild the embedded Parquet viewer runtime after changing `parquet-viewer/`:
 
 ```bash
-npm --prefix site test
-npm --prefix site run build
+cargo install dioxus-cli --version 0.7.3 --locked
+npm --prefix site run build:parquet-viewer
 ```
 
 Run a narrow local compatibility smoke test:
@@ -64,15 +78,17 @@ export MINT_TARGETS='healthcheck awscli'
 export OUTPUT_ROOT="$PWD/out/run"
 
 bash scripts/run-nightly.sh
-VITE_REPORT_DATA_FORMAT=parquet npm --prefix site run build
-uv run python scripts/build_pages.py --output-dir out/pages --new-run out/run/run.json --data-format parquet
+VITE_REPORT_DATA_FORMAT=parquet npm --prefix site run build:all
+uv run python scripts/build_pages.py --output-dir out/pages --new-run out/run --data-format parquet
 ```
 
 Serve `out/pages` with any static file server.
 
 ## Report Data
 
-Published Pages data is Parquet by default. The app loads `data/catalog/runs.parquet` first, then fetches per-run Parquet files for suites, cases, search rows, and logs on demand through DuckDB-Wasm. The default workflows host those Parquet files on the same `gh-pages` site as the static UI. For non-Git hosting, build the frontend with `VITE_REPORT_DATA_BASE_URL=https://.../data/` or open the report with `?dataBaseUrl=https://.../data/`; remote hosts must allow browser CORS reads.
+Published Pages data is Parquet by default. The app loads `data/catalog/runs.parquet` first, then fetches per-run Parquet files for metadata, suites, cases, search rows, log files, and logs on demand through DuckDB-Wasm. The report also ships `data/catalog/files.parquet`, which powers the embedded file browser and lineage view for the published data set.
+
+The default workflows host those Parquet files on the same `gh-pages` site as the static UI. For non-Git hosting, build the frontend with `VITE_REPORT_DATA_BASE_URL=https://.../data/` or open the report with `?dataBaseUrl=https://.../data/`; remote hosts must allow browser CORS reads.
 
 ## Local Workflow Run
 
@@ -88,11 +104,25 @@ act workflow_dispatch \
 
 The sample `act` event keeps publishing disabled. Enable `publish_pages` only when you intend to push `gh-pages`.
 
+## Failure Audit
+
+The generated audit in `docs/s3-tests-failure-audit/` groups failed `s3-tests` cases by implementation area, links each case to the exact upstream test source, records relevant markers, and attaches Ozone source evidence from the inspected run.
+
+Regenerate it from a run JSON and the matching `s3-tests` checkout:
+
+```bash
+uv run python scripts/generate_s3_tests_failure_audit.py \
+  --run-json /path/to/run.json \
+  --s3-tests-dir s3-tests \
+  --output-dir docs/s3-tests-failure-audit
+```
+
 ## Useful Knobs
 
 - `OZONE_REPO`, `OZONE_REF`: Ozone source and ref.
-- `S3_TESTS_SOURCE`, `S3_TESTS_ARGS`, `S3_TESTS_MARK_EXPR`: `s3-tests` source, selector, and marker filter.
+- `S3_TESTS_SOURCE`, `S3_TESTS_ARGS`, `S3_TESTS_MARK_EXPR`, `S3_TESTS_INCLUDE_ALL_CASES`: `s3-tests` source, selector, marker filter, and whether to include passing `s3-tests` cases in the normalized run.
 - `MINT_SOURCE`, `MINT_MODE`, `MINT_TARGETS`, `MINT_BUILD_TARGETS`: Mint source and target selection.
+- `MINT_TIMEOUT_SECONDS`: timeout for each Mint invocation.
 - `OZONE_DATANODES`: compose cluster datanode count.
 - `OUTPUT_ROOT`, `WORK_DIR`: generated output locations.
 
