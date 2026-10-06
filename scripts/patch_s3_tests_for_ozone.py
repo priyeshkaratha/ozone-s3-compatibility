@@ -6,6 +6,18 @@ import re
 import sys
 
 
+LIST_VERSIONS_MARKER = "# Ozone compatibility patch: ListObjectVersions is not implemented"
+
+LIST_VERSIONS_REPLACEMENT = """# Ozone compatibility patch: ListObjectVersions is not implemented
+# in Ozone's S3 Gateway; the ?versions subresource is rejected with
+# HTTP 501 NotImplemented, so avoid calling it during cleanup and
+# treat every bucket as having no object versions to delete.
+def list_versions(client, bucket, batch_size):
+    yield from ()
+
+"""
+
+
 MARKER = "# Ozone compatibility patch: clean up plain objects and multipart uploads"
 
 REPLACEMENT = """def list_current_objects(client, bucket, batch_size):
@@ -120,6 +132,12 @@ def patch_repo(repo: Path) -> None:
 
     text = target.read_text()
     new_text = text
+
+    if LIST_VERSIONS_MARKER not in new_text:
+        pattern = r"def list_versions\(client, bucket, batch_size\):\n.*?(?=\ndef nuke_bucket)"
+        new_text, count = re.subn(pattern, LIST_VERSIONS_REPLACEMENT, new_text, count=1, flags=re.S)
+        if count != 1:
+            raise RuntimeError(f"could not locate list_versions() in {target}")
 
     if MARKER not in new_text:
         pattern = r"def nuke_bucket\(client, bucket\):\n.*?(?=def nuke_prefixed_buckets)"
